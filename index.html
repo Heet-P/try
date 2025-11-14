@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Universal WDF System</title>
+<style>
+body{ font-family: Arial; padding:20px; }
+.success{ color:green; font-weight:bold; }
+.error{ color:red; font-weight:bold; }
+.warning{ color:orange; font-weight:bold; }
+.status-Available{ color:green; font-weight:bold; }
+.status-Issued, .status-Booked{ color:red; font-weight:bold; }
+.status-Registered{ color:blue; font-weight:bold; }
+table{ width:100%; border-collapse: collapse; margin-top:20px; }
+table, th, td{ border:1px solid #aaa; padding:10px; text-align:left; }
+input, select{ padding:8px; width:250px; margin-bottom:10px; }
+button{ padding:10px 15px; margin-right:10px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<h2>Universal WDF Portal</h2>
+
+<!-- Message area -->
+<div id="msg"></div>
+
+<!-- Search bar -->
+<input type="text" id="search" placeholder="Search..." onkeyup="searchTable()">
+
+<!-- Form -->
+<h3>Fill Details</h3>
+<input type="text" id="name" placeholder="Name"><br>
+<input type="email" id="email" placeholder="Email"><br>
+
+<!-- These fields change based on the use-case -->
+<input type="text" id="field1" placeholder="Field 1 (Room/Event/Author)">
+<br>
+<input type="text" id="field2" placeholder="Field 2 (Type/Fee/Status)">
+<br>
+
+<button onclick="addRecord()">Add / Register / Book</button>
+<button onclick="resetForm()">Reset</button>
+
+<!-- Table -->
+<table id="dataTable">
+<tr>
+    <th>Name</th>
+    <th>Email</th>
+    <th>Field 1</th>
+    <th>Field 2</th>
+    <th>Status</th>
+    <th>Actions</th>
+</tr>
+</table>
+
+<script>
+function showMsg(text, type){
+    let msg = document.getElementById("msg");
+    msg.innerHTML = text;
+    msg.className = type;
+    setTimeout(()=>msg.innerHTML="",3000);
+}
+
+function addRecord(){
+    let name = document.getElementById("name").value.trim();
+    let email = document.getElementById("email").value.trim();
+    let f1 = document.getElementById("field1").value.trim();
+    let f2 = document.getElementById("field2").value.trim();
+
+    if(!name || !email || !f1 || !f2){
+        showMsg("✕ Please fill all fields.", "error");
+        return;
+    }
+
+    if(!email.includes("@")){
+        showMsg("⚠ Invalid email format.", "warning");
+        return;
+    }
+
+    let table = document.getElementById("dataTable");
+    let row = table.insertRow(-1);
+
+    row.insertCell(0).innerHTML = name;
+    row.insertCell(1).innerHTML = email;
+    row.insertCell(2).innerHTML = f1;
+    row.insertCell(3).innerHTML = f2;
+
+    let status = row.insertCell(4);
+    status.innerHTML = "Registered";
+    status.className = "status-Registered";
+
+    row.insertCell(5).innerHTML = `
+        <button onclick="updateStatus(this, 'Cancelled')">Cancel</button>
+        <button onclick="deleteRecord(this)">Delete</button>
+    `;
+
+    showMsg("✓ Entry added successfully!", "success");
+    resetForm();
+}
+
+function updateStatus(btn, newStatus){
+    let row = btn.parentNode.parentNode;
+    row.cells[4].innerHTML = newStatus;
+    row.cells[4].className = "status-" + newStatus;
+    showMsg("✔ Status updated!", "success");
+}
+
+function deleteRecord(btn){
+    btn.parentNode.parentNode.remove();
+    showMsg("✂ Entry removed.", "warning");
+}
+
+function resetForm(){
+    document.getElementById("name").value="";
+    document.getElementById("email").value="";
+    document.getElementById("field1").value="";
+    document.getElementById("field2").value="";
+}
+
+function searchTable(){
+    let filter = document.getElementById("search").value.toUpperCase();
+    let rows = document.querySelectorAll("#dataTable tr");
+
+    for(let i=1;i<rows.length;i++){
+        let text = rows[i].innerText.toUpperCase();
+        rows[i].style.display = text.includes(filter) ? "" : "none";
+    }
+}
+</script>
+
+</body>
+</html>
