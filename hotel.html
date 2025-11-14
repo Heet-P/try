@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Hotel Room Booking Portal</title>
+<style>
+body { font-family: Arial; padding: 20px; }
+.success { color: green; font-weight: bold; }
+.error { color: red; font-weight: bold; }
+.warning { color: orange; font-weight: bold; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+table, th, td { border: 1px solid #aaa; padding: 10px; }
+input, select { padding: 8px; width: 250px; margin-bottom: 10px; }
+button { padding: 8px 15px; margin-right: 10px; cursor: pointer; }
+.status-Booked{ color:red; font-weight:bold; }
+.status-Cancelled{ color:orange; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<h2>Hotel Room Booking Portal</h2>
+
+<div id="msg"></div>
+
+<h3>Available Rooms</h3>
+<table>
+<tr><th>Room No.</th><th>Type</th><th>Price/Night</th></tr>
+<tr><td>101</td><td>Single</td><td>₹800</td></tr>
+<tr><td>102</td><td>Double</td><td>₹1200</td></tr>
+<tr><td>201</td><td>Suite</td><td>₹2500</td></tr>
+<tr><td>202</td><td>Suite</td><td>₹2600</td></tr>
+</table>
+
+<hr>
+
+<h3>Book a Room</h3>
+
+<input type="text" id="name" placeholder="Name"><br>
+<input type="email" id="email" placeholder="Email"><br>
+
+<label>Room Type:</label><br>
+<select id="roomType">
+    <option value="">Select</option>
+    <option value="Single">Single</option>
+    <option value="Double">Double</option>
+    <option value="Suite">Suite</option>
+</select><br>
+
+<label>Check-in Date:</label><br>
+<input type="date" id="checkIn"><br>
+
+<label>Check-out Date:</label><br>
+<input type="date" id="checkOut"><br>
+
+<button onclick="bookRoom()">Book Room</button>
+<button onclick="resetForm()">Reset</button>
+
+<hr>
+
+<input type="text" id="search" placeholder="Search booking..." onkeyup="searchTable()">
+
+<h3>Current Bookings</h3>
+
+<table id="bookingTable">
+<tr>
+    <th>Name</th>
+    <th>Email</th>
+    <th>Room Type</th>
+    <th>Check-in</th>
+    <th>Check-out</th>
+    <th>Status</th>
+    <th>Total</th>
+    <th>Action</th>
+</tr>
+</table>
+
+<script>
+function showMsg(msg, type){
+    let m = document.getElementById("msg");
+    m.innerHTML = msg;
+    m.className = type;
+    setTimeout(()=> m.innerHTML="",3000);
+}
+
+function bookRoom(){
+    let name = document.getElementById("name").value.trim();
+    let email = document.getElementById("email").value.trim();
+    let type = document.getElementById("roomType").value;
+    let ci = document.getElementById("checkIn").value;
+    let co = document.getElementById("checkOut").value;
+
+    if(!name || !email || !type || !ci || !co){
+        showMsg("✕ All fields are required.", "error");
+        return;
+    }
+
+    if(!email.includes("@")){
+        showMsg("⚠ Invalid email address.", "warning");
+        return;
+    }
+
+    if(new Date(co) <= new Date(ci)){
+        showMsg("⚠ Please select a valid check-in and check-out date.", "warning");
+        return;
+    }
+
+    // price chart
+    let prices = { "Single":800, "Double":1200, "Suite":2500 };
+    let days = (new Date(co) - new Date(ci)) / (1000*60*60*24);
+    let total = days * prices[type];
+
+    let table = document.getElementById("bookingTable");
+    let row = table.insertRow(-1);
+
+    row.insertCell(0).innerHTML = name;
+    row.insertCell(1).innerHTML = email;
+    row.insertCell(2).innerHTML = type;
+    row.insertCell(3).innerHTML = ci;
+    row.insertCell(4).innerHTML = co;
+    row.insertCell(5).innerHTML = "Booked";
+    row.cells[5].className = "status-Booked";
+    row.insertCell(6).innerHTML = "₹" + total;
+
+    row.insertCell(7).innerHTML =
+        `<button onclick="cancelBooking(this)">Cancel</button>`;
+
+    showMsg("✓ Room booked successfully!", "success");
+    resetForm();
+}
+
+function cancelBooking(btn){
+    let row = btn.parentNode.parentNode;
+    row.cells[5].innerHTML = "Cancelled";
+    row.cells[5].className = "status-Cancelled";
+    showMsg("⚠ Booking cancelled successfully.", "warning");
+}
+
+function resetForm(){
+    document.getElementById("name").value="";
+    document.getElementById("email").value="";
+    document.getElementById("roomType").value="";
+    document.getElementById("checkIn").value="";
+    document.getElementById("checkOut").value="";
+}
+
+function searchTable(){
+    let filter = document.getElementById("search").value.toUpperCase();
+    let rows = document.querySelectorAll("#bookingTable tr");
+
+    for(let i=1;i<rows.length;i++){
+        rows[i].style.display = rows[i].innerText.toUpperCase().includes(filter) ? "" : "none";
+    }
+}
+</script>
+
+</body>
+</html>
