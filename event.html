@@ -11,6 +11,153 @@ table { width: 100%; border-collapse: collapse; margin-top: 20px; }
 table, th, td { border: 1px solid #aaa; padding: 10px; }
 input, select { padding: 8px; width: 250px; margin-bottom: 10px; }
 button { padding: 8px 15px; margin-right: 10px; cursor: pointer; }
+/* Global Styling */
+body {
+    font-family: "Poppins", Arial, sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    padding: 0;
+}
+
+h2, h3 {
+    color: #333;
+}
+
+.container {
+    max-width: 900px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#msg {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.success {
+    background: #d4f8da;
+    color: #1e8a2a;
+    border-left: 5px solid #1e8a2a;
+}
+
+.error {
+    background: #ffe0e0;
+    color: #d10000;
+    border-left: 5px solid #d10000;
+}
+
+.warning {
+    background: #fff3cd;
+    color: #d39e00;
+    border-left: 5px solid #d39e00;
+}
+
+/* Inputs & Selects */
+input, select {
+    width: 300px;
+    padding: 10px;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 15px;
+    outline: none;
+}
+
+input:focus, select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0,123,255,0.4);
+}
+
+/* Buttons */
+button {
+    padding: 10px 18px;
+    border: none;
+    outline: none;
+    background: #007bff;
+    color: white;
+    margin-right: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+button:nth-child(2) {
+    background: #6c757d;
+}
+
+button:nth-child(2):hover {
+    background: #545b62;
+}
+
+.cancel-btn {
+    background: #dc3545;
+}
+
+.cancel-btn:hover {
+    background: #a71d2a;
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+th {
+    background: #007bff;
+    color: white;
+    padding: 12px;
+    letter-spacing: 0.5px;
+    text-align: left;
+}
+
+td {
+    padding: 12px;
+    background: white;
+    border-bottom: 1px solid #eee;
+}
+
+tr:hover td {
+    background: #f1f7ff;
+}
+
+/* Search Bar */
+#search {
+    width: 250px;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #bbb;
+    margin-bottom: 12px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    input, select {
+        width: 100%;
+    }
+
+    #search {
+        width: 100%;
+    }
+
+    th, td {
+        font-size: 14px;
+    }
+}
+
 </style>
 </head>
 <body>
