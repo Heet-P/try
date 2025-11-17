@@ -1,0 +1,203 @@
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
+class BadCreditException extends Exception {
+    public BadCreditException(String msg) {
+        super(msg);
+    }
+}
+
+class Customer implements Serializable {
+    int id;
+    String name;
+    int creditScore;
+
+    public Customer(int id, String name, int creditScore) {
+        this.id = id;
+        this.name = name;
+        this.creditScore = creditScore;
+    }
+}
+
+interface LoanProcess {
+    boolean isEligible() throws BadCreditException;
+    double calculateEMI(double principal, int years, double rate);
+}
+
+abstract class LoanCustomer extends Customer implements LoanProcess {
+    double principal;
+    int years;
+    double rate;
+
+    public LoanCustomer(int id, String name, int creditScore,
+                        double principal, int years, double rate) {
+        super(id, name, creditScore);
+        this.principal = principal;
+        this.years = years;
+        this.rate = rate;
+    }
+
+    @Override
+    public double calculateEMI(double principal, int years, double rate) {
+        double r = rate / (12 * 100);
+        int n = years * 12;
+        double emi = (principal * r * Math.pow(1 + r, n)) /
+                     (Math.pow(1 + r, n) - 1);
+        return emi;
+    }
+
+    @Override
+    public String toString() {
+        return "Customer " + id + " " + name + " Score " + creditScore;
+    }
+}
+
+class HomeLoanCustomer extends LoanCustomer {
+    public HomeLoanCustomer(int id, String name, int creditScore,
+                            double principal, int years, double rate) {
+        super(id, name, creditScore, principal, years, rate);
+    }
+
+    @Override
+    public boolean isEligible() throws BadCreditException {
+        if (creditScore < 300 || creditScore > 900) {
+            throw new BadCreditException("Invalid credit score value");
+        }
+        return creditScore >= 650;
+    }
+}
+
+class CarLoanCustomer extends LoanCustomer {
+    public CarLoanCustomer(int id, String name, int creditScore,
+                           double principal, int years, double rate) {
+        super(id, name, creditScore, principal, years, rate);
+    }
+
+    @Override
+    public boolean isEligible() throws BadCreditException {
+        if (creditScore < 300 || creditScore > 900) {
+            throw new BadCreditException("Invalid credit score value");
+        }
+        return creditScore >= 600;
+    }
+}
+
+class LoanContext {
+    LoanCustomer customer;
+    boolean eligibleChecked;
+    boolean eligible;
+    double emi;
+
+    public LoanContext(LoanCustomer customer) {
+        this.customer = customer;
+    }
+}
+
+class EligibilityThread extends Thread {
+    private LoanContext context;
+
+    public EligibilityThread(LoanContext context) {
+        this.context = context;
+    }
+
+    @Override
+    public void run() {
+        synchronized (context) {
+            try {
+                context.eligible = context.customer.isEligible();
+                context.eligibleChecked = true;
+                context.notifyAll();
+            } catch (BadCreditException e) {
+                System.out.println("Bad credit: " + e.getMessage());
+                context.eligible = false;
+                context.eligibleChecked = true;
+                context.notifyAll();
+            }
+        }
+    }
+}
+
+class EmiThread extends Thread {
+    private LoanContext context;
+
+    public EmiThread(LoanContext context) {
+        this.context = context;
+    }
+
+    @Override
+    public void run() {
+        synchronized (context) {
+            while (!context.eligibleChecked) {
+                try {
+                    context.wait();
+                } catch (InterruptedException e) {
+                    System.out.println("EMI thread interrupted");
+                    return;
+                }
+            }
+            if (context.eligible) {
+                context.emi = context.customer.calculateEMI(
+                        context.customer.principal,
+                        context.customer.years,
+                        context.customer.rate
+                );
+                System.out.println("EMI for " + context.customer.name + ": " + context.emi);
+            } else {
+                System.out.println("Customer " + context.customer.name + " not eligible for loan");
+            }
+        }
+    }
+}
+
+public class LoanApprovalSystem {
+    public static void main(String[] args) {
+        ObjectOutputStream oos = null;
+        try {
+            LoanCustomer c1 = new HomeLoanCustomer(1, "Karan", 700, 1000000, 15, 8.5);
+            LoanCustomer c2 = new CarLoanCustomer(2, "Bhavya", 580, 600000, 5, 10.0);
+
+            LoanContext ctx1 = new LoanContext(c1);
+            LoanContext ctx2 = new LoanContext(c2);
+
+            EligibilityThread e1 = new EligibilityThread(ctx1);
+            EmiThread emi1 = new EmiThread(ctx1);
+
+            EligibilityThread e2 = new EligibilityThread(ctx2);
+            EmiThread emi2 = new EmiThread(ctx2);
+
+            e1.start();
+            emi1.start();
+            e2.start();
+            emi2.start();
+
+            e1.join();
+            emi1.join();
+            e2.join();
+            emi2.join();
+
+            oos = new ObjectOutputStream(new FileOutputStream("approved_loans.dat"));
+            if (ctx1.eligible) {
+                oos.writeObject(c1);
+                System.out.println("Saved " + c1.name + " to file");
+            }
+            if (ctx2.eligible) {
+                oos.writeObject(c2);
+                System.out.println("Saved " + c2.name + " to file");
+            }
+
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Error: " + e.getMessage());
+        } finally {
+            if (oos != null) {
+                try {
+                    oos.close();
+                } catch (IOException e) {
+                    System.out.println("Error closing stream");
+                }
+            }
+            System.out.println("Loan processing completed");
+        }
+    }
+}
