@@ -1,0 +1,121 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+
+class AbnormalVitalException extends Exception {
+    public AbnormalVitalException(String msg) {
+        super(msg);
+    }
+}
+
+class Patient {
+    protected int id;
+    protected String name;
+    protected int[] vitals; // for example: [heartRate, systolicBP, diastolicBP]
+
+    public Patient(int id, String name, int[] vitals) {
+        this.id = id;
+        this.name = name;
+        this.vitals = vitals;
+    }
+
+    public double averageVitals() {
+        int sum = 0;
+        for (int v : vitals) {
+            sum += v;
+        }
+        return sum / (double) vitals.length;
+    }
+}
+
+class InPatient extends Patient {
+    protected int wardNo;
+
+    public InPatient(int id, String name, int[] vitals, int wardNo) {
+        super(id, name, vitals);
+        this.wardNo = wardNo;
+    }
+}
+
+interface Monitorable {
+    String riskLevel() throws AbnormalVitalException;
+
+    void alertDoctor(String level);
+}
+
+class EmergencyPatient extends InPatient implements Monitorable {
+
+    public EmergencyPatient(int id, String name, int[] vitals, int wardNo) {
+        super(id, name, vitals, wardNo);
+    }
+
+    @Override
+    public String riskLevel() throws AbnormalVitalException {
+        int heartRate = vitals[0];
+        int systolic = vitals[1];
+        int diastolic = vitals[2];
+
+        if (heartRate <= 0 || systolic <= 0 || diastolic <= 0) {
+            throw new AbnormalVitalException("Invalid vital reading");
+        }
+
+        if (heartRate > 140 || systolic > 180 || diastolic > 110) {
+            return "HIGH";
+        } else if (heartRate < 50 || systolic < 90 || diastolic < 60) {
+            return "LOW";
+        } else {
+            return "NORMAL";
+        }
+    }
+
+    @Override
+    public void alertDoctor(String level) {
+        System.out.println("Emergency alert for patient " + name + " Risk: " + level);
+    }
+
+    @Override
+    public String toString() {
+        return "EmergencyPatient{id=" + id + ", name='" + name + "', ward=" + wardNo + "}";
+    }
+}
+
+public class HospitalMonitoringSystem {
+    public static void main(String[] args) {
+        ArrayList<EmergencyPatient> emergencyPatients = new ArrayList<>();
+        emergencyPatients.add(new EmergencyPatient(1, "Rohit", new int[]{150, 190, 120}, 5));
+        emergencyPatients.add(new EmergencyPatient(2, "Sejal", new int[]{80, 120, 80}, 6));
+        emergencyPatients.add(new EmergencyPatient(3, "Vivek", new int[]{45, 85, 55}, 7));
+
+        BufferedWriter bw = null;
+
+        try {
+            bw = new BufferedWriter(new FileWriter("emergency_patients.txt"));
+
+            for (EmergencyPatient ep : emergencyPatients) {
+                try {
+                    String level = ep.riskLevel();
+                    ep.alertDoctor(level);
+                    if (!"NORMAL".equals(level)) {
+                        bw.write(ep.toString() + " Risk=" + level);
+                        bw.newLine();
+                    }
+                } catch (AbnormalVitalException e) {
+                    System.out.println("Abnormal vitals for " + ep.name + ": " + e.getMessage());
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println("File error: " + e.getMessage());
+        } finally {
+            System.out.println("Monitoring cycle completed");
+            if (bw != null) {
+                try {
+                    bw.close();
+                } catch (IOException e) {
+                    System.out.println("Error closing file");
+                }
+            }
+        }
+    }
+}
