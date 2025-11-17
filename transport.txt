@@ -1,0 +1,118 @@
+import java.util.Map;
+import java.util.TreeMap;
+
+class LowFuelException extends Exception {
+    public LowFuelException(String msg) {
+        super(msg);
+    }
+}
+
+interface Maintainable {
+    void scheduleService();
+    void checkFuel() throws LowFuelException;
+}
+
+abstract class Vehicle {
+    protected String registrationNo;
+    protected String driverName;
+    protected double fuelLevel; // in percent
+
+    public Vehicle(String registrationNo, String driverName, double fuelLevel) {
+        this.registrationNo = registrationNo;
+        this.driverName = driverName;
+        this.fuelLevel = fuelLevel;
+    }
+
+    public abstract double calculateTripCost(double distance);
+
+    @Override
+    public String toString() {
+        return registrationNo + " driven by " + driverName + " fuel " + fuelLevel + "%";
+    }
+}
+
+class Truck extends Vehicle implements Maintainable {
+    private double costPerKm = 25.0;
+
+    public Truck(String registrationNo, String driverName, double fuelLevel) {
+        super(registrationNo, driverName, fuelLevel);
+    }
+
+    @Override
+    public double calculateTripCost(double distance) {
+        return distance * costPerKm;
+    }
+
+    @Override
+    public void scheduleService() {
+        System.out.println("Truck " + registrationNo + " service scheduled every 5000 km.");
+    }
+
+    @Override
+    public void checkFuel() throws LowFuelException {
+        if (fuelLevel < 15) {
+            throw new LowFuelException("Truck " + registrationNo + " has low fuel");
+        } else {
+            System.out.println("Truck " + registrationNo + " fuel OK");
+        }
+    }
+}
+
+class Bus extends Vehicle implements Maintainable {
+    private double costPerKm = 18.0;
+
+    public Bus(String registrationNo, String driverName, double fuelLevel) {
+        super(registrationNo, driverName, fuelLevel);
+    }
+
+    @Override
+    public double calculateTripCost(double distance) {
+        return distance * costPerKm;
+    }
+
+    @Override
+    public void scheduleService() {
+        System.out.println("Bus " + registrationNo + " service scheduled every 3000 km.");
+    }
+
+    @Override
+    public void checkFuel() throws LowFuelException {
+        if (fuelLevel < 20) {
+            throw new LowFuelException("Bus " + registrationNo + " has low fuel");
+        } else {
+            System.out.println("Bus " + registrationNo + " fuel OK");
+        }
+    }
+}
+
+public class FleetManagementSystem {
+    public static void main(String[] args) {
+        TreeMap<String, Vehicle> fleet = new TreeMap<>();
+
+        Vehicle t1 = new Truck("GJ01TR1234", "Mahesh", 10);
+        Vehicle t2 = new Truck("GJ01TR5678", "Suresh", 40);
+        Vehicle b1 = new Bus("GJ01BS1111", "Ramesh", 18);
+
+        fleet.put(t1.registrationNo, t1);
+        fleet.put(t2.registrationNo, t2);
+        fleet.put(b1.registrationNo, b1);
+
+        for (Map.Entry<String, Vehicle> entry : fleet.entrySet()) {
+            Vehicle v = entry.getValue();
+            System.out.println(v);
+            double cost = v.calculateTripCost(120);
+            System.out.println("Trip cost for 120 km: " + cost);
+
+            if (v instanceof Maintainable) {
+                Maintainable m = (Maintainable) v;
+                m.scheduleService();
+                try {
+                    m.checkFuel();
+                } catch (LowFuelException e) {
+                    System.out.println("Warning: " + e.getMessage());
+                }
+            }
+            System.out.println("--------------");
+        }
+    }
+}
