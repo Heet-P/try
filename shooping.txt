@@ -1,0 +1,154 @@
+import java.util.HashMap;
+import java.util.Map;
+
+class InvalidPriceException extends Exception {
+    public InvalidPriceException(String msg) {
+        super(msg);
+    }
+}
+
+interface Discountable {
+    double applyDiscount(double price);
+}
+
+class Product implements Discountable {
+    private String productId;
+    private String name;
+    private double price;
+
+    public Product(String productId, String name, double price) throws InvalidPriceException {
+        if (price < 0) {
+            throw new InvalidPriceException("Negative price for " + name);
+        }
+        this.productId = productId;
+        this.name = name;
+        this.price = price;
+    }
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    @Override
+    public double applyDiscount(double price) {
+        return price; // base has no discount
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Product)) return false;
+        Product p = (Product) o;
+        return productId.equals(p.productId);
+    }
+
+    @Override
+    public int hashCode() {
+        return productId.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return name + "(" + productId + ")";
+    }
+}
+
+class Electronics extends Product {
+    public Electronics(String productId, String name, double price) throws InvalidPriceException {
+        super(productId, name, price);
+    }
+
+    @Override
+    public double applyDiscount(double price) {
+        return price * 0.9; // 10 percent discount
+    }
+}
+
+class Clothing extends Product {
+    public Clothing(String productId, String name, double price) throws InvalidPriceException {
+        super(productId, name, price);
+    }
+
+    @Override
+    public double applyDiscount(double price) {
+        return price * 0.8; // 20 percent discount
+    }
+}
+
+class Grocery extends Product {
+    public Grocery(String productId, String name, double price) throws InvalidPriceException {
+        super(productId, name, price);
+    }
+
+    // no discount, inherit base if needed
+}
+
+class PriceCalculatorThread extends Thread {
+    private Map<Product, Integer> cart;
+    private double total;
+
+    public PriceCalculatorThread(Map<Product, Integer> cart) {
+        this.cart = cart;
+    }
+
+    @Override
+    public void run() {
+        double sum = 0;
+        for (Map.Entry<Product, Integer> e : cart.entrySet()) {
+            Product p = e.getKey();
+            int qty = e.getValue();
+            double discounted = p.applyDiscount(p.getPrice());
+            sum += discounted * qty;
+            System.out.println("Item: " + p + " qty: " + qty + " final per piece: " + discounted);
+        }
+        total = sum;
+    }
+
+    public double getTotal() {
+        return total;
+    }
+}
+
+class BillPrinterThread extends Thread {
+    private PriceCalculatorThread calculator;
+
+    public BillPrinterThread(PriceCalculatorThread calculator) {
+        this.calculator = calculator;
+    }
+
+    @Override
+    public void run() {
+        try {
+            calculator.join(); // wait until calculation completes
+            double total = calculator.getTotal();
+            System.out.println("Total amount to pay: " + total);
+            System.out.println("Order processed");
+        } catch (InterruptedException e) {
+            System.out.println("Bill printing interrupted");
+        }
+    }
+}
+
+public class ShoppingCartSystem {
+    public static void main(String[] args) {
+        try {
+            Map<Product, Integer> cart = new HashMap<>();
+            cart.put(new Electronics("E101", "Laptop", 60000), 1);
+            cart.put(new Clothing("C201", "Jacket", 3000), 2);
+            cart.put(new Grocery("G301", "Rice Bag", 800), 3);
+
+            PriceCalculatorThread pct = new PriceCalculatorThread(cart);
+            BillPrinterThread bpt = new BillPrinterThread(pct);
+
+            pct.start();
+            bpt.start();
+
+        } catch (InvalidPriceException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+}
