@@ -1,0 +1,147 @@
+//UNI Admission
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+
+class InvalidMarksException extends Exception {
+    public InvalidMarksException(String message) {
+        super(message);
+    }
+}
+
+class Applicant {
+    protected String applicationId;
+    protected String name;
+    protected int[] marks; // for different subjects
+    protected String category;
+
+    public Applicant(String applicationId, String name, int[] marks) throws InvalidMarksException {
+        this.applicationId = applicationId;
+        this.name = name;
+        validateMarks(marks);
+        this.marks = marks;
+        this.category = "Not assigned";
+    }
+
+    private void validateMarks(int[] marks) throws InvalidMarksException {
+        for (int m : marks) {
+            if (m < 0 || m > 100) {
+                throw new InvalidMarksException("Marks out of range for " + name);
+            }
+        }
+    }
+
+    public double calculatePercentage() {
+        int sum = 0;
+        for (int m : marks) {
+            sum += m;
+        }
+        return sum / (double) marks.length;
+    }
+
+    @Override
+    public String toString() {
+        return applicationId + " " + name + " " + calculatePercentage() + " " + category;
+    }
+}
+
+interface Selectable {
+    boolean isEligible();
+    String assignCategory();
+}
+
+class EngineeringApplicant extends Applicant implements Selectable {
+
+    public EngineeringApplicant(String applicationId, String name, int[] marks) throws InvalidMarksException {
+        super(applicationId, name, marks);
+    }
+
+    @Override
+    public boolean isEligible() {
+        return calculatePercentage() >= 60.0;
+    }
+
+    @Override
+    public String assignCategory() {
+        double p = calculatePercentage();
+        if (p >= 85) {
+            category = "Merit";
+        } else if (p >= 70) {
+            category = "General";
+        } else {
+            category = "Reserved";
+        }
+        return category;
+    }
+}
+
+class MedicalApplicant extends Applicant implements Selectable {
+
+    public MedicalApplicant(String applicationId, String name, int[] marks) throws InvalidMarksException {
+        super(applicationId, name, marks);
+    }
+
+    @Override
+    public boolean isEligible() {
+        return calculatePercentage() >= 70.0; // stricter
+    }
+
+    @Override
+    public String assignCategory() {
+        double p = calculatePercentage();
+        if (p >= 90) {
+            category = "Merit";
+        } else if (p >= 75) {
+            category = "General";
+        } else {
+            category = "Reserved";
+        }
+        return category;
+    }
+}
+
+public class UniversityAdmissionSystem {
+    public static void main(String[] args) {
+        ArrayList<Applicant> list = new ArrayList<>();
+        BufferedWriter bw = null;
+
+        try {
+            // create some demo applicants
+            list.add(new EngineeringApplicant("ENG001", "Rahul", new int[]{80, 75, 90}));
+            list.add(new EngineeringApplicant("ENG002", "Priya", new int[]{55, 60, 50}));
+            list.add(new MedicalApplicant("MED001", "Amit", new int[]{88, 92, 95}));
+            list.add(new MedicalApplicant("MED002", "Neha", new int[]{40, 35, 30}));
+
+            bw = new BufferedWriter(new FileWriter("selected_applicants.txt"));
+
+            for (Applicant a : list) {
+                if (a instanceof Selectable) {
+                    Selectable s = (Selectable) a;
+                    if (s.isEligible()) {
+                        s.assignCategory();
+                        bw.write(a.toString());
+                        bw.newLine();
+                        System.out.println("Selected: " + a);
+                    } else {
+                        System.out.println("Not eligible: " + a.name);
+                    }
+                }
+            }
+            System.out.println("Selected applicants written to file.");
+        } catch (InvalidMarksException e) {
+            System.out.println("Invalid marks: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("File error: " + e.getMessage());
+        } finally {
+            System.out.println("Admission cycle completed");
+            if (bw != null) {
+                try {
+                    bw.close();
+                } catch (IOException e) {
+                    System.out.println("Error closing writer");
+                }
+            }
+        }
+    }
+}
