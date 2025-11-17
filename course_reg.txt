@@ -1,0 +1,117 @@
+import java.util.LinkedList;
+
+class SeatFullException extends Exception {
+    public SeatFullException(String msg) {
+        super(msg);
+    }
+}
+
+interface Enrollable {
+    void enrollStudent(String name) throws SeatFullException;
+    void cancelEnrollment(String name);
+}
+
+class Course {
+    protected String courseId;
+    protected String name;
+    protected int maxSeats;
+    protected LinkedList<String> students;
+
+    public Course(String courseId, String name, int maxSeats) {
+        this.courseId = courseId;
+        this.name = name;
+        this.maxSeats = maxSeats;
+        this.students = new LinkedList<>();
+    }
+
+    public boolean checkAvailability() {
+        return students.size() < maxSeats;
+    }
+
+    public void showStudents() {
+        System.out.println("Course: " + name + " (" + courseId + ")");
+        for (String s : students) {
+            System.out.println(" - " + s);
+        }
+    }
+}
+
+class CoreCourse extends Course implements Enrollable {
+
+    public CoreCourse(String courseId, String name, int maxSeats) {
+        super(courseId, name, maxSeats);
+    }
+
+    @Override
+    public void enrollStudent(String name) throws SeatFullException {
+        if (!checkAvailability()) {
+            throw new SeatFullException("Core course " + this.name + " is full");
+        }
+        students.add(formatName(name));
+        System.out.println(name + " enrolled in core course " + this.name);
+    }
+
+    @Override
+    public void cancelEnrollment(String name) {
+        students.remove(formatName(name));
+        System.out.println(name + " removed from core course " + this.name);
+    }
+
+    private String formatName(String name) {
+        name = name.trim();
+        return name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();
+    }
+}
+
+class ElectiveCourse extends Course implements Enrollable {
+
+    public ElectiveCourse(String courseId, String name, int maxSeats) {
+        super(courseId, name, maxSeats);
+    }
+
+    @Override
+    public void enrollStudent(String name) throws SeatFullException {
+        if (!checkAvailability()) {
+            throw new SeatFullException("Elective course " + this.name + " is full");
+        }
+        students.add(name.toUpperCase());
+        System.out.println(name + " enrolled in elective course " + this.name);
+    }
+
+    @Override
+    public void cancelEnrollment(String name) {
+        students.remove(name.toUpperCase());
+        System.out.println(name + " removed from elective course " + this.name);
+    }
+}
+
+public class CourseRegistrationSystem {
+    public static void main(String[] args) {
+        try {
+            CoreCourse core = new CoreCourse("CS301", "Data Structures", 2);
+            ElectiveCourse elec = new ElectiveCourse("CS401", "AI Basics", 1);
+
+            core.enrollStudent("rahul");
+            core.enrollStudent("PRIYA");
+            // this will throw exception
+            try {
+                core.enrollStudent("jay");
+            } catch (SeatFullException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+
+            elec.enrollStudent("Neha");
+
+            core.showStudents();
+            elec.showStudents();
+
+            core.cancelEnrollment("rahul");
+            core.showStudents();
+
+        } catch (SeatFullException e) {
+            System.out.println("Error: " + e.getMessage());
+        } finally {
+            System.out.println("Registration completed");
+        }
+    }
+}
